@@ -7,6 +7,8 @@
     <file url="file://$PROJECT_DIR$/vertx-cache-common/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/vertx-cache-distributed/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/vertx-cache-distributed/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/vertx-cache-it/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/vertx-cache-it/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/vertx-cache-memory/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/vertx-cache-memory/src/main/resources" charset="UTF-8" />
   </component>

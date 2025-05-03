@@ -1,0 +1,72 @@
+package io.vertx.cache.memory.operation.number;
+
+import io.vertx.cache.common.event.CacheEvent;
+import io.vertx.cache.common.operation.number.NumberOperation;
+import io.vertx.cache.memory.MemoryCache;
+import io.vertx.cache.memory.operation.MemoryValueOperation;
+import io.vertx.core.Future;
+
+/**
+ * Implementation of the NumberOperation interface for Double values using MemoryCache.
+ */
+public class MemoryDoubleOperation extends MemoryValueOperation<Double> implements NumberOperation<Double> {
+
+    /**
+     * Creates a new MemoryDoubleOperation.
+     *
+     * @param cache The MemoryCache to use
+     */
+    public MemoryDoubleOperation(MemoryCache cache) {
+        super(cache, Double.class, null, null);
+    }
+
+    @Override
+    public Future<Double> increment(String key) {
+        return increment(key, 1.0);
+    }
+
+    @Override
+    public Future<Double> increment(String key, Double amount) {
+        Double currentValue = cache.get(key);
+
+        // Publish event for key read operation
+        if (currentValue != null) {
+            cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
+        }
+
+        Double newValue;
+        if (currentValue == null) {
+            newValue = amount;
+        } else {
+            newValue = currentValue + amount;
+        }
+
+        cache.put(key, newValue);
+        return Future.succeededFuture(newValue);
+    }
+
+    @Override
+    public Future<Double> decrement(String key) {
+        return decrement(key, 1.0);
+    }
+
+    @Override
+    public Future<Double> decrement(String key, Double amount) {
+        Double currentValue = cache.get(key);
+
+        // Publish event for key read operation
+        if (currentValue != null) {
+            cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
+        }
+
+        Double newValue;
+        if (currentValue == null) {
+            newValue = -amount;
+        } else {
+            newValue = currentValue - amount;
+        }
+
+        cache.put(key, newValue);
+        return Future.succeededFuture(newValue);
+    }
+}

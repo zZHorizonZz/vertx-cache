@@ -13,4 +13,11 @@
     <name>Vert.x - Cache - Common</name>
     <artifactId>vertx-cache-common</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-core</artifactId>
+        </dependency>
+    </dependencies>
+
 </project>

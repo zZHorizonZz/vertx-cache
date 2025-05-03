@@ -14,12 +14,29 @@
         <module>vertx-cache-common</module>
         <module>vertx-cache-memory</module>
         <module>vertx-cache-distributed</module>
+        <module>vertx-cache-it</module>
     </modules>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <vertx.version>4.4.5</vertx.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-core</artifactId>
+                <version>${vertx.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-web</artifactId>
+                <version>${vertx.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
 </project>

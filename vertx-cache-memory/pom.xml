@@ -11,4 +11,12 @@
 
     <name>Vert.x - Cache - Memory</name>
     <artifactId>vertx-cache-memory</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>dev.horizon</groupId>
+            <artifactId>vertx-cache-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 </project>
