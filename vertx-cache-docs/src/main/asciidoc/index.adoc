@@ -1,0 +1,137 @@
+= Vert.x Cache
+
+Vert.x Cache is a module that provides caching capabilities for Vert.x applications.
+It offers both in-memory and distributed caching solutions, allowing you to choose the best option for your specific needs.
+
+Vert.x Cache is split into several parts:
+
+- Vert.x Cache Common: Core interfaces and utilities
+- Vert.x Cache Memory: In-memory cache implementation
+- Vert.x Cache Distributed: Distributed cache implementation
+
+== Using Vert.x Cache
+
+=== Adding Dependencies
+
+To use Vert.x Cache, add one of the following dependencies to the _dependencies_ section of your build descriptor:
+
+* Maven (in your `pom.xml`):
+
+[source,xml,subs="+attributes"]
+----
+<!-- For in-memory cache -->
+<dependency>
+  <groupId>dev.horizon</groupId>
+  <artifactId>vertx-cache-memory</artifactId>
+  <version>${maven.version}</version>
+</dependency>
+
+<!-- For distributed cache -->
+<dependency>
+  <groupId>dev.horizon</groupId>
+  <artifactId>vertx-cache-distributed</artifactId>
+  <version>${maven.version}</version>
+</dependency>
+----
+
+* Gradle (in your `build.gradle` file):
+
+[source,groovy,subs="+attributes"]
+----
+dependencies {
+  // For in-memory cache
+  compile 'dev.horizon:vertx-cache-memory:${maven.version}'
+
+  // For distributed cache
+  compile 'dev.horizon:vertx-cache-distributed:${maven.version}'
+}
+----
+
+=== Creating a Cache
+
+Vert.x Cache provides a unified interface for both in-memory and distributed caching.
+The main difference is in the implementation and configuration options.
+
+==== In-Memory Cache
+
+You can create an in-memory cache instance using the `MemoryCache` interface:
+
+[source,java,indent=0]
+----
+include::examples/CacheExamples.java[tags=createMemoryCache]
+----
+
+With configuration options:
+
+[source,java,indent=0]
+----
+include::examples/CacheExamples.java[tags=createMemoryCacheWithOptions]
+----
+
+==== Distributed Cache
+
+You can create a distributed cache instance using the `DistributedCache` interface:
+
+[source,java,indent=0]
+----
+include::examples/CacheExamples.java[tags=createDistributedCache]
+----
+
+With configuration options:
+
+[source,java,indent=0]
+----
+include::examples/CacheExamples.java[tags=createDistributedCacheWithOptions]
+----
+
+=== Cache Operations
+
+Both cache implementations provide the same core operations through a shared interface.
+This allows you to switch between implementations with minimal code changes.
+
+==== String Operations
+
+[source,java,indent=0]
+----
+include::examples/CacheExamples.java[tags=stringOperations]
+----
+
+==== JSON Operations
+
+[source,java,indent=0]
+----
+include::examples/CacheExamples.java[tags=jsonOperations]
+----
+
+==== Binary Operations
+
+[source,java,indent=0]
+----
+include::examples/CacheExamples.java[tags=binaryOperations]
+----
+
+=== Cache Features
+
+Vert.x Cache provides several features that are available across both implementations:
+
+==== Time-To-Live (TTL)
+
+You can set a TTL for cache entries to automatically expire them after a certain period:
+
+[source,java]
+----
+// Set a value with a TTL of 30 minutes
+cache.strings().set("key", "value", 30, TimeUnit.MINUTES);
+----
+
+==== Cache Events
+
+You can listen for cache events such as puts, gets, and removals:
+
+[source,java]
+----
+cache.events().listen(event -> {
+  System.out.println("Event type: " + event.type());
+  System.out.println("Key: " + event.key());
+});
+----
