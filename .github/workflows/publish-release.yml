@@ -1,0 +1,50 @@
+name: Publish Release
+
+on:
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+
+      - name: Update repository URL in pom.xml
+        shell: bash
+        run: |
+          REPO_OWNER=$(echo "${{ github.repository }}" | cut -d '/' -f 1)
+          sed -i "s|OWNER|$REPO_OWNER|g" pom.xml
+
+      - name: Verify non-snapshot version
+        if: ${{ github.event_name == 'release' }}
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          if [[ $VERSION == *-SNAPSHOT ]]; then
+            echo "Error: Cannot release snapshot version $VERSION"
+            exit 1
+          fi
+          echo "Publishing release version: $VERSION"
+
+      - name: Publish Common Package
+        if: ${{ github.event_name == 'release' }}
+        run: mvn -B deploy -DskipTests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
