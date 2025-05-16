@@ -1,4 +1,4 @@
-package io.vertx.cache.it.operation;
+package io.vertx.cache.it.event;
 
 import com.redis.testcontainers.RedisContainer;
 import io.vertx.cache.common.Cache;

@@ -1,4 +1,4 @@
-package io.vertx.cache.it.operation;
+package io.vertx.cache.it.event;
 
 import io.vertx.cache.common.event.CacheEvent;
 import io.vertx.cache.it.AbstractCacheTest;
