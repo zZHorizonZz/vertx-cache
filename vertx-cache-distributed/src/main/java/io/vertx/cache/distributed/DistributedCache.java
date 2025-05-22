@@ -88,12 +88,4 @@ public interface DistributedCache extends Cache {
      * @return A Future that will be completed with the value, or null if the key doesn't exist or has expired
      */
     Future<Response> get(String key);
-
-    /**
-     * Removes a value from the cache.
-     *
-     * @param key The key
-     * @return A Future that will be completed with the removed value, or null if the key didn't exist
-     */
-    <T> Future<T> remove(String key);
 }

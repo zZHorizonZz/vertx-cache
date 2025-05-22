@@ -16,49 +16,45 @@ public class DistributedStringOperation extends DistributedValueOperation<String
     public Future<Long> length(String key) {
         String prefixedKey = cache.prefixKey(key);
 
-        return cache.getRedis().strlen(prefixedKey)
-                .compose(response -> {
-                    if (response != null) {
-                        cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
-                        return Future.succeededFuture(response.toLong());
-                    }
-                    return Future.succeededFuture(0L);
-                });
+        return cache.getRedis().strlen(prefixedKey).compose(response -> {
+            if (response != null) {
+                cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
+                return Future.succeededFuture(response.toLong());
+            }
+            return Future.succeededFuture(0L);
+        });
     }
 
     @Override
     public Future<Integer> append(String key, String value) {
         String prefixedKey = cache.prefixKey(key);
 
-        return cache.getRedis().append(prefixedKey, value)
-                .compose(response -> {
-                    cache.events().publishEvent(CacheEvent.EventType.KEY_UPDATED, key);
-                    return Future.succeededFuture(response.toInteger());
-                });
+        return cache.getRedis().append(prefixedKey, value).compose(response -> {
+            cache.events().publishEvent(CacheEvent.EventType.KEY_UPDATED, key);
+            return Future.succeededFuture(response.toInteger());
+        });
     }
 
     @Override
     public Future<String> getRange(String key, int start, int end) {
         String prefixedKey = cache.prefixKey(key);
 
-        return cache.getRedis().getrange(prefixedKey, String.valueOf(start), String.valueOf(end))
-                .compose(response -> {
-                    if (response != null) {
-                        cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
-                        return Future.succeededFuture(response.toString());
-                    }
-                    return Future.succeededFuture("");
-                });
+        return cache.getRedis().getrange(prefixedKey, String.valueOf(start), String.valueOf(end)).compose(response -> {
+            if (response != null) {
+                cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
+                return Future.succeededFuture(response.toString());
+            }
+            return Future.succeededFuture("");
+        });
     }
 
     @Override
     public Future<Long> setRange(String key, long offset, String value) {
         String prefixedKey = cache.prefixKey(key);
 
-        return cache.getRedis().setrange(prefixedKey, String.valueOf(offset), value)
-                .compose(response -> {
-                    cache.events().publishEvent(CacheEvent.EventType.KEY_UPDATED, key);
-                    return Future.succeededFuture(response.toLong());
-                });
+        return cache.getRedis().setrange(prefixedKey, String.valueOf(offset), value).compose(response -> {
+            cache.events().publishEvent(CacheEvent.EventType.KEY_UPDATED, key);
+            return Future.succeededFuture(response.toLong());
+        });
     }
 }

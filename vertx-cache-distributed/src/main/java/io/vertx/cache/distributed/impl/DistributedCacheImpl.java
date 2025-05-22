@@ -166,27 +166,6 @@ public class DistributedCacheImpl implements DistributedCache {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> Future<T> remove(String key) {
-        String prefixedKey = prefixKey(key);
-
-        // Get the value before deleting it
-        return get(key)
-                .compose(value -> {
-                    if (value == null) {
-                        return Future.succeededFuture(null);
-                    }
-
-                    // Delete the key
-                    return redis.del(List.of(prefixedKey))
-                            .compose(response -> {
-                                eventManager.publishEvent(CacheEvent.EventType.KEY_DELETED, key);
-                                return Future.succeededFuture((T) value);
-                            });
-                });
-    }
-
-    @Override
     public KeyOperation keys() {
         return keyOperation;
     }

@@ -20,33 +20,20 @@ public class DistributedKeyOperation implements KeyOperation {
 
     @Override
     public Future<Set<String>> keys(String pattern) {
-        // Add the prefix to the pattern
-        String prefixedPattern = cache.getKeyPrefix() + pattern;
-
-        // Use Redis KEYS command to find matching keys
-        return cache.getRedis().keys(prefixedPattern)
-                .compose(response -> {
-                    Set<String> keys = extractKeys(response);
-
-                    // Publish event for keys listed operation
-                    cache.events().publishEvent(CacheEvent.EventType.KEYS_LISTED, pattern);
-
-                    return Future.succeededFuture(keys);
-                });
+        return cache.getRedis().keys(cache.getKeyPrefix() + pattern).compose(response -> {
+            Set<String> keys = extractKeys(response);
+            cache.events().publishEvent(CacheEvent.EventType.KEYS_LISTED, pattern);
+            return Future.succeededFuture(keys);
+        });
     }
 
     @Override
     public Future<Set<String>> keys() {
-        // Use Redis KEYS command to find all keys with our prefix
-        return cache.getRedis().keys(cache.getKeyPrefix() + "*")
-                .compose(response -> {
-                    Set<String> keys = extractKeys(response);
-
-                    // Publish event for keys listed operation
-                    cache.events().publishEvent(CacheEvent.EventType.KEYS_LISTED, "*");
-
-                    return Future.succeededFuture(keys);
-                });
+        return cache.getRedis().keys(cache.getKeyPrefix() + "*").compose(response -> {
+            Set<String> keys = extractKeys(response);
+            cache.events().publishEvent(CacheEvent.EventType.KEYS_LISTED, "*");
+            return Future.succeededFuture(keys);
+        });
     }
 
     /**
@@ -60,7 +47,6 @@ public class DistributedKeyOperation implements KeyOperation {
             return new HashSet<>();
         }
 
-        // Extract keys from response and remove the prefix
         return response.stream()
                 .map(Response::toString)
                 .map(key -> key.substring(cache.getKeyPrefix().length()))

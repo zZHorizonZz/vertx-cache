@@ -7,6 +7,7 @@ import io.vertx.cache.common.serialization.CacheSerializer;
 import io.vertx.cache.distributed.impl.DistributedCacheImpl;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.redis.client.Response;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,6 +76,14 @@ public class DistributedValueOperation<T> implements ValueOperation<T> {
         };
     }
 
+    private T deserialize(Response response) {
+        if (response == null) {
+            return null;
+        }
+
+        return deserializer.deserialize(Buffer.buffer(response.toString().getBytes()));
+    }
+
     @Override
     public Future<T> get(String key) {
         return get(key, deserializer);
@@ -82,49 +91,44 @@ public class DistributedValueOperation<T> implements ValueOperation<T> {
 
     @Override
     public Future<T> get(String key, CacheDeserializer<T> deserializer) {
-        String prefixedKey = cache.prefixKey(key);
+        return cache.getRedis().get(cache.prefixKey(key)).compose(response -> {
+            if (response == null) {
+                return Future.succeededFuture(null);
+            }
 
-        return cache.getRedis().get(prefixedKey)
-                .compose(response -> {
-                    if (response == null) {
-                        return Future.succeededFuture(null);
-                    }
+            // Deserialize the value
+            byte[] bytes = response.toString().getBytes();
+            T value = deserializer.deserialize(Buffer.buffer(bytes));
 
-                    // Deserialize the value
-                    byte[] bytes = response.toString().getBytes();
-                    T value = deserializer.deserialize(Buffer.buffer(bytes));
+            if (value != null) {
+                cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
+            }
 
-                    if (value != null) {
-                        cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
-                    }
-
-                    return Future.succeededFuture(value);
-                });
+            return Future.succeededFuture(value);
+        });
     }
 
     @Override
     public Future<T> getAndSet(String key, T value) {
-        return get(key).compose(oldValue -> cache.put(key, serializer.serialize(value).toString()).compose(v -> Future.succeededFuture(oldValue)));
+        return cache.getRedis().set(List.of(cache.prefixKey(key), serializer.serialize(value).toString(), "!GET")).map(this::deserialize);
     }
 
     @Override
     public Future<T> getAndDelete(String key) {
-        return get(key).compose(oldValue -> cache.remove(key).compose(v -> Future.succeededFuture(oldValue)));
+        return cache.getRedis().getdel(cache.prefixKey(key)).map(this::deserialize);
     }
 
     @Override
     public Future<Void> set(String key, T value) {
-        return cache.put(key, serializer.serialize(value).toString()).compose(v -> Future.succeededFuture());
+        return cache.getRedis().set(List.of(cache.prefixKey(key), serializer.serialize(value).toString())).compose(response -> {
+            cache.events().publishEvent(CacheEvent.EventType.KEY_CREATED, key);
+            return Future.succeededFuture();
+        });
     }
 
     @Override
     public Future<Void> set(String key, T value, CacheSerializer<T> serializer) {
-        Buffer data = serializer.serialize(value);
-        if (data == null) {
-            throw new IllegalArgumentException("The serialized value cannot be null");
-        }
-
-        return cache.getRedis().set(List.of(cache.prefixKey(key), data.toString())).compose(response -> {
+        return cache.getRedis().set(List.of(cache.prefixKey(key), serializer.serialize(value).toString())).compose(response -> {
             cache.events().publishEvent(CacheEvent.EventType.KEY_CREATED, key);
             return Future.succeededFuture();
         });
@@ -137,20 +141,7 @@ public class DistributedValueOperation<T> implements ValueOperation<T> {
 
     @Override
     public Future<Void> set(String key, T value, long ttl, TimeUnit unit, CacheSerializer<T> serializer) {
-        String prefixedKey = cache.prefixKey(key);
-
-        // Serialize the value
-        Buffer data = serializer.serialize(value);
-        String serializedValue = data != null ? data.toString() : null;
-
-        // Set the value in Redis with expiration
-        List<String> args = new ArrayList<>();
-        args.add(prefixedKey);
-        args.add(serializedValue);
-        args.add("PX");
-        args.add(String.valueOf(unit.toMillis(ttl)));
-
-        return cache.getRedis().set(args).compose(response -> {
+        return cache.getRedis().set(List.of(cache.prefixKey(key), serializer.serialize(value).toString(), "PX", String.valueOf(unit.toMillis(ttl)))).compose(response -> {
             cache.events().publishEvent(CacheEvent.EventType.KEY_CREATED, key);
             return Future.succeededFuture();
         });
