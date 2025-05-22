@@ -66,10 +66,7 @@ public class DefaultCacheEventManager implements CacheEventManager {
     @Override
     public Future<String> registerEventHandler(Handler<CacheEvent> handler) {
         String registrationId = UUID.randomUUID().toString();
-        MessageConsumer<JsonObject> consumer = vertx.eventBus().consumer(eventAddress, message -> {
-            System.out.println("Received event: " + message.body().toString());
-            handler.handle(new CacheEvent(message.body()));
-        });
+        MessageConsumer<JsonObject> consumer = vertx.eventBus().consumer(eventAddress, message -> handler.handle(new CacheEvent(message.body())));
 
         consumers.put(registrationId, consumer);
         return Future.succeededFuture(registrationId);
@@ -79,14 +76,8 @@ public class DefaultCacheEventManager implements CacheEventManager {
     public Future<String> registerEventHandler(CacheEvent.EventType type, Handler<CacheEvent> handler) {
         String registrationId = UUID.randomUUID().toString();
         MessageConsumer<JsonObject> consumer = vertx.eventBus().consumer(eventAddress, message -> {
-            JsonObject json = message.body();
-            CacheEvent.EventType eventType = CacheEvent.EventType.valueOf(json.getString("type"));
-
-            if (eventType == type) {
-                String key = json.getString("key");
-                long timestamp = json.getLong("timestamp");
-
-                CacheEvent event = new CacheEvent(eventType, key);
+            CacheEvent event = new CacheEvent(message.body());
+            if (event.getType() == type) {
                 handler.handle(event);
             }
         });
@@ -99,14 +90,8 @@ public class DefaultCacheEventManager implements CacheEventManager {
     public Future<String> registerKeyEventHandler(String key, Handler<CacheEvent> handler) {
         String registrationId = UUID.randomUUID().toString();
         MessageConsumer<JsonObject> consumer = vertx.eventBus().consumer(eventAddress, message -> {
-            JsonObject json = message.body();
-            String eventKey = json.getString("key");
-
-            if (key.equals(eventKey)) {
-                CacheEvent.EventType type = CacheEvent.EventType.valueOf(json.getString("type"));
-                long timestamp = json.getLong("timestamp");
-
-                CacheEvent event = new CacheEvent(type, key);
+            CacheEvent event = new CacheEvent(message.body());
+            if (key.equals(event.getKey())) {
                 handler.handle(event);
             }
         });
