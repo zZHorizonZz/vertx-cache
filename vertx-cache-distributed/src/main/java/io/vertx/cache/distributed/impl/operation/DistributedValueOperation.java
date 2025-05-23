@@ -100,10 +100,6 @@ public class DistributedValueOperation<T> implements ValueOperation<T> {
             byte[] bytes = response.toString().getBytes();
             T value = deserializer.deserialize(Buffer.buffer(bytes));
 
-            if (value != null) {
-                cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
-            }
-
             return Future.succeededFuture(value);
         });
     }
@@ -120,18 +116,12 @@ public class DistributedValueOperation<T> implements ValueOperation<T> {
 
     @Override
     public Future<Void> set(String key, T value) {
-        return cache.getRedis().set(List.of(cache.prefixKey(key), serializer.serialize(value).toString())).compose(response -> {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_CREATED, key);
-            return Future.succeededFuture();
-        });
+        return cache.getRedis().set(List.of(cache.prefixKey(key), serializer.serialize(value).toString())).compose(response -> Future.succeededFuture());
     }
 
     @Override
     public Future<Void> set(String key, T value, CacheSerializer<T> serializer) {
-        return cache.getRedis().set(List.of(cache.prefixKey(key), serializer.serialize(value).toString())).compose(response -> {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_CREATED, key);
-            return Future.succeededFuture();
-        });
+        return cache.getRedis().set(List.of(cache.prefixKey(key), serializer.serialize(value).toString())).compose(response -> Future.succeededFuture());
     }
 
     @Override
@@ -141,10 +131,7 @@ public class DistributedValueOperation<T> implements ValueOperation<T> {
 
     @Override
     public Future<Void> set(String key, T value, long ttl, TimeUnit unit, CacheSerializer<T> serializer) {
-        return cache.getRedis().set(List.of(cache.prefixKey(key), serializer.serialize(value).toString(), "PX", String.valueOf(unit.toMillis(ttl)))).compose(response -> {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_CREATED, key);
-            return Future.succeededFuture();
-        });
+        return cache.getRedis().set(List.of(cache.prefixKey(key), serializer.serialize(value).toString(), "PX", String.valueOf(unit.toMillis(ttl)))).compose(response -> Future.succeededFuture());
     }
 
     @Override
@@ -152,16 +139,7 @@ public class DistributedValueOperation<T> implements ValueOperation<T> {
         String prefixedKey = cache.prefixKey(key);
 
         // Use Redis SETNX command to set the value only if the key doesn't exist
-        return cache.getRedis().setnx(prefixedKey, serializer.serialize(value).toString()).compose(response -> {
-            if (response.toInteger() == 1) {
-                // Key was set
-                cache.events().publishEvent(CacheEvent.EventType.KEY_CREATED, key);
-            } else {
-                // Key already exists
-                cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
-            }
-            return Future.succeededFuture();
-        });
+        return cache.getRedis().setnx(prefixedKey, serializer.serialize(value).toString()).compose(response -> Future.succeededFuture());
     }
 
     @Override
@@ -176,16 +154,7 @@ public class DistributedValueOperation<T> implements ValueOperation<T> {
         args.add("PX");
         args.add(String.valueOf(unit.toMillis(ttl)));
 
-        return cache.getRedis().set(args).compose(response -> {
-            if (response != null && "OK".equalsIgnoreCase(response.toString())) {
-                // Key was set
-                cache.events().publishEvent(CacheEvent.EventType.KEY_CREATED, key);
-            } else {
-                // Key already exists
-                cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
-            }
-            return Future.succeededFuture();
-        });
+        return cache.getRedis().set(args).compose(response -> Future.succeededFuture());
     }
 
     @Override
@@ -213,13 +182,7 @@ public class DistributedValueOperation<T> implements ValueOperation<T> {
         List<String> keysList = List.of(prefixedKeys);
 
         // Delete the keys
-        return cache.getRedis().del(keysList).compose(response -> {
-            // Publish events for each deleted key
-            for (String key : keys) {
-                cache.events().publishEvent(CacheEvent.EventType.KEY_DELETED, key);
-            }
-            return Future.succeededFuture();
-        });
+        return cache.getRedis().del(keysList).compose(response -> Future.succeededFuture());
     }
 
     @Override

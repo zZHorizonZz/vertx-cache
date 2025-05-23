@@ -21,11 +21,6 @@ public class MemoryLongOperation extends MemoryValueOperation<Long> implements N
     public Future<Long> increment(String key, Long amount) {
         Long currentValue = cache.get(key);
 
-        // Publish event for key read operation
-        if (currentValue != null) {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
-        }
-
         Long newValue;
         if (currentValue == null) {
             newValue = amount;
@@ -45,11 +40,6 @@ public class MemoryLongOperation extends MemoryValueOperation<Long> implements N
     @Override
     public Future<Long> decrement(String key, Long amount) {
         Long currentValue = cache.get(key);
-
-        // Publish event for key read operation
-        if (currentValue != null) {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
-        }
 
         long newValue;
         if (currentValue == null) {

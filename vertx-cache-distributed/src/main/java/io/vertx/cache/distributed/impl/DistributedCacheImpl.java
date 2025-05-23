@@ -2,7 +2,6 @@ package io.vertx.cache.distributed.impl;
 
 import io.vertx.cache.common.event.CacheEvent;
 import io.vertx.cache.common.event.CacheEventManager;
-import io.vertx.cache.common.event.DefaultCacheEventManager;
 import io.vertx.cache.common.operation.KeyOperation;
 import io.vertx.cache.common.operation.ValueOperation;
 import io.vertx.cache.common.operation.binary.BinaryOperation;
@@ -15,6 +14,7 @@ import io.vertx.cache.common.serialization.CacheDeserializer;
 import io.vertx.cache.common.serialization.CacheSerializer;
 import io.vertx.cache.distributed.DistributedCache;
 import io.vertx.cache.distributed.DistributedCacheOptions;
+import io.vertx.cache.distributed.impl.event.DistributedCacheEventManager;
 import io.vertx.cache.distributed.impl.operation.DistributedKeyOperation;
 import io.vertx.cache.distributed.impl.operation.DistributedValueOperation;
 import io.vertx.cache.distributed.impl.operation.binary.DistributedBinaryOperation;
@@ -30,7 +30,6 @@ import io.vertx.redis.client.Redis;
 import io.vertx.redis.client.RedisAPI;
 import io.vertx.redis.client.Response;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -70,7 +69,7 @@ public class DistributedCacheImpl implements DistributedCache {
         this.redis = RedisAPI.api(redisClient);
         this.defaultTtl = options.getDefaultTtlMillis();
         this.keyPrefix = options.getKeyPrefix();
-        this.eventManager = new DefaultCacheEventManager(vertx);
+        this.eventManager = new DistributedCacheEventManager(this);
 
         this.keyOperation = new DistributedKeyOperation(this);
         this.stringOperation = new DistributedStringOperation(this);
@@ -136,26 +135,10 @@ public class DistributedCacheImpl implements DistributedCache {
         return get(key).compose(previousValue -> {
             // Set the value in Redis
             if (ttlMillis > 0) {
-                return redis.psetex(prefixedKey, String.valueOf(ttlMillis), value).compose(response -> {
-                    // Publish event based on whether there was a previous value
-                    if (previousValue != null) {
-                        eventManager.publishEvent(CacheEvent.EventType.KEY_UPDATED, key);
-                    } else {
-                        eventManager.publishEvent(CacheEvent.EventType.KEY_CREATED, key);
-                    }
-
-                    return Future.succeededFuture(previousValue == null ? null : previousValue.toString());
-                });
+                return redis.psetex(prefixedKey, String.valueOf(ttlMillis), value)
+                        .compose(response -> Future.succeededFuture(previousValue == null ? null : previousValue.toString()));
             } else {
-                return redis.set(List.of(prefixedKey, value)).compose(response -> {
-                    // Publish event based on whether there was a previous value
-                    if (previousValue != null) {
-                        eventManager.publishEvent(CacheEvent.EventType.KEY_UPDATED, key);
-                    } else {
-                        eventManager.publishEvent(CacheEvent.EventType.KEY_CREATED, key);
-                    }
-                    return Future.succeededFuture(previousValue == null ? null : previousValue.toString());
-                });
+                return redis.set(List.of(prefixedKey, value)).compose(response -> Future.succeededFuture(previousValue == null ? null : previousValue.toString()));
             }
         });
     }
@@ -209,26 +192,15 @@ public class DistributedCacheImpl implements DistributedCache {
 
     @Override
     public Future<Void> clear() {
-        // Use the KEYS command to find all keys with our prefix
-        return redis.keys(keyPrefix + "*")
-                .compose(response -> {
-                    if (response == null || response.size() == 0) {
-                        return Future.succeededFuture();
-                    }
+        return keyOperation.keys().compose(keys -> {
+            vertx.eventBus().publish(eventManager.getEventAddress(), new CacheEvent(CacheEvent.EventType.CACHE_CLEARED, null).toJson());
 
-                    // Convert the response to a list of strings for the DEL command
-                    List<String> keysList = new ArrayList<>();
-                    for (int i = 0; i < response.size(); i++) {
-                        keysList.add(response.get(i).toString());
-                    }
+            if (!keys.isEmpty()) {
+                return redis.del(keys.stream().map(this::prefixKey).toList()).compose(delResponse -> Future.succeededFuture());
+            }
 
-                    // Delete all the keys
-                    return redis.del(keysList)
-                            .compose(delResponse -> {
-                                eventManager.publishEvent(CacheEvent.EventType.CACHE_CLEARED, null);
-                                return Future.succeededFuture();
-                            });
-                });
+            return Future.succeededFuture();
+        });
     }
 
     @Override

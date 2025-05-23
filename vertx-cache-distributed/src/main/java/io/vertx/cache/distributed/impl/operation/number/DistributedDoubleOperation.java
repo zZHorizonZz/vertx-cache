@@ -19,34 +19,22 @@ public class DistributedDoubleOperation extends DistributedValueOperation<Double
 
     @Override
     public Future<Double> increment(String key) {
-        return cache.getRedis().incr(cache.prefixKey(key)).compose(response -> {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_UPDATED, key);
-            return Future.succeededFuture(response.toDouble());
-        });
+        return cache.getRedis().incr(cache.prefixKey(key)).compose(response -> Future.succeededFuture(response.toDouble()));
     }
 
     @Override
     public Future<Double> increment(String key, Double amount) {
-        return cache.getRedis().incrbyfloat(cache.prefixKey(key), amount.toString()).compose(response -> {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_UPDATED, key);
-            return Future.succeededFuture(response.toDouble());
-        });
+        return cache.getRedis().incrbyfloat(cache.prefixKey(key), amount.toString()).compose(response -> Future.succeededFuture(response.toDouble()));
     }
 
     @Override
     public Future<Double> decrement(String key) {
-        return cache.getRedis().decr(cache.prefixKey(key)).compose(response -> {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_UPDATED, key);
-            return Future.succeededFuture(response.toDouble());
-        });
+        return cache.getRedis().decr(cache.prefixKey(key)).compose(response -> Future.succeededFuture(response.toDouble()));
     }
 
     @Override
     public Future<Double> decrement(String key, Double amount) {
-        return cache.getRedis().decrby(cache.prefixKey(key), amount.toString()).compose(response -> {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_UPDATED, key);
-            return Future.succeededFuture(response.toDouble());
-        });
+        return cache.getRedis().decrby(cache.prefixKey(key), amount.toString()).compose(response -> Future.succeededFuture(response.toDouble()));
     }
 
     private static class RedisDoubleSerializer implements CacheSerializer<Double>, CacheDeserializer<Double> {

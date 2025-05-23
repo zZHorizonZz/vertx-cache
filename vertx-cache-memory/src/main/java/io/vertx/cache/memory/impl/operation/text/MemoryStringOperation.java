@@ -21,11 +21,6 @@ public class MemoryStringOperation extends MemoryValueOperation<String> implemen
     public Future<Integer> append(String key, String value) {
         String currentValue = cache.get(key);
 
-        // Publish event for key read operation
-        if (currentValue != null) {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
-        }
-
         String newValue;
 
         if (currentValue == null) {
@@ -61,11 +56,6 @@ public class MemoryStringOperation extends MemoryValueOperation<String> implemen
     @Override
     public Future<Long> setRange(String key, long offset, String value) {
         String currentValue = cache.get(key);
-
-        // Publish event for key read operation
-        if (currentValue != null) {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
-        }
 
         if (currentValue == null) {
             // If the key doesn't exist, create a new string with enough space

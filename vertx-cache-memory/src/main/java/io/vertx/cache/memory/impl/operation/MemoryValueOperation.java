@@ -55,14 +55,13 @@ public class MemoryValueOperation<T> implements ValueOperation<T> {
         };
     }
 
+    protected void publishEvent(CacheEvent.EventType eventType, String key) {
+        cache.getVertx().eventBus().publish(cache.events().getEventAddress(), new CacheEvent(eventType, key).toJson());
+    }
+
     @Override
     public Future<T> get(String key) {
         T value = cache.get(key);
-
-        // Publish event for key read operation
-        if (value != null) {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
-        }
 
         return Future.succeededFuture(value);
     }
@@ -75,9 +74,6 @@ public class MemoryValueOperation<T> implements ValueOperation<T> {
         }
 
         T value = deserializer.deserialize(Buffer.buffer(bytes));
-        if (value != null) {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
-        }
 
         return Future.succeededFuture(value);
     }
@@ -132,28 +128,18 @@ public class MemoryValueOperation<T> implements ValueOperation<T> {
 
     @Override
     public Future<Void> setIfAbsent(String key, T value) {
-        // Use atomic operation to avoid race conditions
         T existingValue = cache.get(key);
         if (existingValue == null) {
-            // Key doesn't exist, so set it with the default TTL
             cache.put(key, value);
-        } else {
-            // Key exists, publish a read event
-            cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
         }
         return Future.succeededFuture();
     }
 
     @Override
     public Future<Void> setIfAbsent(String key, T value, long ttl, TimeUnit unit) {
-        // Use atomic operation to avoid race conditions
         T existingValue = cache.get(key);
         if (existingValue == null) {
-            // Key doesn't exist, so set it with the specified TTL
             cache.put(key, value, unit.toMillis(ttl));
-        } else {
-            // Key exists, publish a read event
-            cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
         }
         return Future.succeededFuture();
     }

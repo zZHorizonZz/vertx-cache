@@ -166,14 +166,6 @@ public class CacheExamples {
             System.out.println("Key: " + event.getKey());
         });
 
-        // Register a handler for specific event type
-        Future<String> keyCreatedFuture = cache.events().registerEventHandler(
-            CacheEvent.EventType.KEY_CREATED, 
-            event -> {
-                System.out.println("Key created: " + event.getKey());
-            }
-        );
-
         // Register a handler for events on a specific key
         Future<String> keyEventFuture = cache.events().registerKeyEventHandler(
             "important-key", 

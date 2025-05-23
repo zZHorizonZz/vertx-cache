@@ -19,34 +19,22 @@ public class DistributedLongOperation extends DistributedValueOperation<Long> im
 
     @Override
     public Future<Long> increment(String key) {
-        return cache.getRedis().incr(cache.prefixKey(key)).compose(response -> {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_UPDATED, key);
-            return Future.succeededFuture(response.toLong());
-        });
+        return cache.getRedis().incr(cache.prefixKey(key)).compose(response -> Future.succeededFuture(response.toLong()));
     }
 
     @Override
     public Future<Long> increment(String key, Long amount) {
-        return cache.getRedis().incrby(cache.prefixKey(key), amount.toString()).compose(response -> {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_UPDATED, key);
-            return Future.succeededFuture(response.toLong());
-        });
+        return cache.getRedis().incrby(cache.prefixKey(key), amount.toString()).compose(response -> Future.succeededFuture(response.toLong()));
     }
 
     @Override
     public Future<Long> decrement(String key) {
-        return cache.getRedis().decr(cache.prefixKey(key)).compose(response -> {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_UPDATED, key);
-            return Future.succeededFuture(response.toLong());
-        });
+        return cache.getRedis().decr(cache.prefixKey(key)).compose(response -> Future.succeededFuture(response.toLong()));
     }
 
     @Override
     public Future<Long> decrement(String key, Long amount) {
-        return cache.getRedis().decrby(cache.prefixKey(key), amount.toString()).compose(response -> {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_UPDATED, key);
-            return Future.succeededFuture(response.toLong());
-        });
+        return cache.getRedis().decrby(cache.prefixKey(key), amount.toString()).compose(response -> Future.succeededFuture(response.toLong()));
     }
 
     private static class RedisLongSerializer implements CacheSerializer<Long>, CacheDeserializer<Long> {

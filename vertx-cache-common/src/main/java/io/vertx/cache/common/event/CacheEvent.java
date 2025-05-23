@@ -106,11 +106,6 @@ public class CacheEvent {
      */
     public enum EventType {
         /**
-         * A key was created in the cache.
-         */
-        KEY_CREATED,
-
-        /**
          * A key was updated in the cache.
          */
         KEY_UPDATED,
@@ -121,18 +116,13 @@ public class CacheEvent {
         KEY_DELETED,
 
         /**
+         * A key expired from the cache.
+         */
+        KEY_EXPIRED,
+
+        /**
          * The cache was cleared.
          */
-        CACHE_CLEARED,
-
-        /**
-         * A key was read from the cache.
-         */
-        KEY_READ,
-
-        /**
-         * Keys were listed from the cache.
-         */
-        KEYS_LISTED
+        CACHE_CLEARED
     }
 }

@@ -10,6 +10,8 @@ import io.vertx.redis.client.RedisOptions;
 import org.junit.After;
 import org.junit.Before;
 
+import java.io.IOException;
+
 public class DistributedEventCacheTest extends EventCacheTest {
 
     private final RedisContainer container = new RedisContainer(RedisContainer.DEFAULT_IMAGE_NAME.withTag(RedisContainer.DEFAULT_TAG));
@@ -19,6 +21,14 @@ public class DistributedEventCacheTest extends EventCacheTest {
     public void setUp() {
         this.vertx = Vertx.vertx();
         this.container.start();
+
+        // Enable keyspace notifications in Redis
+        try {
+            this.container.execInContainer("redis-cli", "config", "set", "notify-keyspace-events", "KEA");
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
         this.cache = cache(vertx);
     }
 

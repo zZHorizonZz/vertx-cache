@@ -86,12 +86,4 @@ public interface MemoryCache extends Cache {
      * @return The removed value, or null if the key didn't exist
      */
     <T> T remove(String key);
-
-    /**
-     * Handles a key expiration by removing it from the cache and publishing a KEY_EXPIRED event.
-     *
-     * @param key The key that expired
-     * @return The expired value, or null if the key didn't exist
-     */
-    <T> T handleExpiration(String key);
 }

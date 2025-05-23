@@ -31,10 +31,6 @@ public class MemoryKeyOperation implements KeyOperation {
         Set<String> matchingKeys = allKeys.stream()
                 .filter(key -> compiledPattern.matcher(key).matches())
                 .collect(Collectors.toSet());
-
-        // Publish event for keys listed operation
-        cache.events().publishEvent(CacheEvent.EventType.KEYS_LISTED, pattern);
-
         return Future.succeededFuture(matchingKeys);
     }
 
@@ -42,10 +38,6 @@ public class MemoryKeyOperation implements KeyOperation {
     public Future<Set<String>> keys() {
         // Get all keys from the cache
         Set<String> allKeys = new HashSet<>(cache.keySet());
-
-        // Publish event for keys listed operation
-        cache.events().publishEvent(CacheEvent.EventType.KEYS_LISTED, "*");
-
         return Future.succeededFuture(allKeys);
     }
 

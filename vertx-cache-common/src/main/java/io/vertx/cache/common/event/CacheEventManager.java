@@ -1,6 +1,7 @@
 package io.vertx.cache.common.event;
 
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -9,7 +10,7 @@ import io.vertx.core.Vertx;
  * Interface for managing cache events. This interface provides methods for publishing events to the EventBus and registering handlers for events.
  */
 @VertxGen
-public interface CacheEventManager {
+public interface CacheEventManager extends Closeable {
 
     /**
      * The default address for cache events on the EventBus.
@@ -29,23 +30,6 @@ public interface CacheEventManager {
      * @return The event address
      */
     String getEventAddress();
-
-    /**
-     * Publishes a cache event to the EventBus.
-     *
-     * @param event The event to publish
-     * @return A Future that will be completed when the event is published
-     */
-    Future<Void> publishEvent(CacheEvent event);
-
-    /**
-     * Publishes a cache event of the specified type for the given key to the EventBus.
-     *
-     * @param type The type of the event
-     * @param key The key that the event is related to (can be null for events like CACHE_CLEARED)
-     * @return A Future that will be completed when the event is published
-     */
-    Future<Void> publishEvent(CacheEvent.EventType type, String key);
 
     /**
      * Registers a handler for all cache events.

@@ -21,11 +21,6 @@ public class MemoryDoubleOperation extends MemoryValueOperation<Double> implemen
     public Future<Double> increment(String key, Double amount) {
         Double currentValue = cache.get(key);
 
-        // Publish event for key read operation
-        if (currentValue != null) {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
-        }
-
         double newValue;
         if (currentValue == null) {
             newValue = amount;
@@ -45,11 +40,6 @@ public class MemoryDoubleOperation extends MemoryValueOperation<Double> implemen
     @Override
     public Future<Double> decrement(String key, Double amount) {
         Double currentValue = cache.get(key);
-
-        // Publish event for key read operation
-        if (currentValue != null) {
-            cache.events().publishEvent(CacheEvent.EventType.KEY_READ, key);
-        }
 
         double newValue;
         if (currentValue == null) {

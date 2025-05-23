@@ -2,7 +2,6 @@ package io.vertx.cache.memory.impl;
 
 import io.vertx.cache.common.event.CacheEvent;
 import io.vertx.cache.common.event.CacheEventManager;
-import io.vertx.cache.common.event.DefaultCacheEventManager;
 import io.vertx.cache.common.operation.KeyOperation;
 import io.vertx.cache.common.operation.ValueOperation;
 import io.vertx.cache.common.operation.binary.BinaryOperation;
@@ -15,6 +14,7 @@ import io.vertx.cache.common.serialization.CacheDeserializer;
 import io.vertx.cache.common.serialization.CacheSerializer;
 import io.vertx.cache.memory.MemoryCache;
 import io.vertx.cache.memory.MemoryCacheOptions;
+import io.vertx.cache.memory.impl.event.MemoryCacheEventManager;
 import io.vertx.cache.memory.impl.operation.MemoryKeyOperation;
 import io.vertx.cache.memory.impl.operation.MemoryValueOperation;
 import io.vertx.cache.memory.impl.operation.binary.MemoryBinaryOperation;
@@ -65,7 +65,7 @@ public class MemoryCacheImpl implements MemoryCache {
         this.defaultTtl = options.getDefaultTtlMillis() > 0 ? options.getDefaultTtlMillis() : 3600000;
         this.cleanupIntervalMillis = options.getCleanupIntervalMillis() > 0 ? options.getCleanupIntervalMillis() : 1000;
         this.cache = new ConcurrentHashMap<>();
-        this.eventManager = new DefaultCacheEventManager(vertx);
+        this.eventManager = new MemoryCacheEventManager(vertx);
 
         this.keyOperation = new MemoryKeyOperation(this);
         this.stringOperation = new MemoryStringOperation(this);
@@ -90,7 +90,7 @@ public class MemoryCacheImpl implements MemoryCache {
 
         expiredKeys.forEach(key -> {
             if (cache.remove(key) != null) {
-                eventManager.publishEvent(CacheEvent.EventType.KEY_DELETED, key);
+                publishEvent(CacheEvent.EventType.KEY_EXPIRED, key);
             }
         });
     }
@@ -116,11 +116,11 @@ public class MemoryCacheImpl implements MemoryCache {
         CacheEntry<T> newEntry = new CacheEntry<>(key, value, ttlMillis);
         CacheEntry<?> previousEntry = cache.put(key, newEntry);
 
+        publishEvent(CacheEvent.EventType.KEY_UPDATED, key);
+
         if (previousEntry != null) {
-            eventManager.publishEvent(CacheEvent.EventType.KEY_UPDATED, key);
             return (T) previousEntry.getValue();
         } else {
-            eventManager.publishEvent(CacheEvent.EventType.KEY_CREATED, key);
             return null;
         }
     }
@@ -136,7 +136,7 @@ public class MemoryCacheImpl implements MemoryCache {
 
         if (entry.isExpired()) {
             if (cache.remove(key, entry)) {
-                eventManager.publishEvent(CacheEvent.EventType.KEY_DELETED, key);
+                publishEvent(CacheEvent.EventType.KEY_DELETED, key);
             }
 
             return null;
@@ -150,27 +150,8 @@ public class MemoryCacheImpl implements MemoryCache {
     public <T> T remove(String key) {
         CacheEntry<?> entry = cache.remove(key);
         if (entry != null) {
-            eventManager.publishEvent(CacheEvent.EventType.KEY_DELETED, key);
+            publishEvent(CacheEvent.EventType.KEY_DELETED, key);
             return (T) entry.getValue();
-        }
-        return null;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T> T handleExpiration(String key) {
-        CacheEntry<?> entry = cache.get(key);
-        if (entry != null) {
-            if (cache.remove(key, entry)) {
-                eventManager.publishEvent(CacheEvent.EventType.KEY_DELETED, key);
-                return (T) entry.getValue();
-            }
-
-            // If the entry was concurrently modified, try to get the current value
-            entry = cache.get(key);
-            if (entry != null) {
-                return (T) entry.getValue();
-            }
         }
         return null;
     }
@@ -219,7 +200,7 @@ public class MemoryCacheImpl implements MemoryCache {
     @Override
     public Future<Void> clear() {
         cache.clear();
-        eventManager.publishEvent(CacheEvent.EventType.CACHE_CLEARED, null);
+        publishEvent(CacheEvent.EventType.CACHE_CLEARED, null);
         return Future.succeededFuture();
     }
 
@@ -236,6 +217,10 @@ public class MemoryCacheImpl implements MemoryCache {
             cleanupTimerId = null;
         }
         return clear();
+    }
+
+    private void publishEvent(CacheEvent.EventType eventType, String key) {
+        vertx.eventBus().publish(eventManager.getEventAddress(), new CacheEvent(eventType, key).toJson());
     }
 
     /**

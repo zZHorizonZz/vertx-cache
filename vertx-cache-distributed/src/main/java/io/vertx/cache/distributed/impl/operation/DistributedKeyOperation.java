@@ -22,7 +22,6 @@ public class DistributedKeyOperation implements KeyOperation {
     public Future<Set<String>> keys(String pattern) {
         return cache.getRedis().keys(cache.getKeyPrefix() + pattern).compose(response -> {
             Set<String> keys = extractKeys(response);
-            cache.events().publishEvent(CacheEvent.EventType.KEYS_LISTED, pattern);
             return Future.succeededFuture(keys);
         });
     }
@@ -31,7 +30,6 @@ public class DistributedKeyOperation implements KeyOperation {
     public Future<Set<String>> keys() {
         return cache.getRedis().keys(cache.getKeyPrefix() + "*").compose(response -> {
             Set<String> keys = extractKeys(response);
-            cache.events().publishEvent(CacheEvent.EventType.KEYS_LISTED, "*");
             return Future.succeededFuture(keys);
         });
     }
